@@ -1,0 +1,4 @@
+com\example\currency_conversion_microservice\bean\CurrencyConversion.class
+com\example\currency_conversion_microservice\CurrencyConversionApplication.class
+com\example\currency_conversion_microservice\proxy\CurrencyExchangeProxy.class
+com\example\currency_conversion_microservice\controller\CurrencyConversionController.class

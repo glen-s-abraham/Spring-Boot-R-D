@@ -1,0 +1,5 @@
+com\example\currency_exchange_microservice\repository\CurrencyExchangeRepository.class
+com\example\currency_exchange_microservice\controller\CurrencyExchangeController.class
+com\example\currency_exchange_microservice\CurrencyExchangeApplication.class
+com\example\currency_exchange_microservice\controller\CircuitBreakerController.class
+com\example\currency_exchange_microservice\bean\CurrencyExchange.class
