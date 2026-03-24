@@ -1,0 +1,108 @@
+services:
+  naming-server:
+    image: naming-server:0.0.1-SNAPSHOT
+    build:
+      context: ./microservices/netflix-eureka-naming-server
+    ports:
+      - "8761:8761"
+    restart: always
+    depends_on:
+      - config-server
+    networks:
+      - microservice-network
+
+  config-server:
+    image: config-server:0.0.1-SNAPSHOT
+    build:
+      context: ./microservices/spring-cloud-config-server
+    ports:
+      - "8888:8888"
+    restart: always
+    environment:
+      SPRING_PROFILES_ACTIVE: native
+      SPRING_CLOUD_CONFIG_SERVER_NATIVE_SEARCH_LOCATIONS: file:///config-repo
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://naming-server:8761/eureka
+    volumes:
+      - ./microservices/git-local-config-repo:/config-repo
+    networks:
+      - microservice-network
+
+  api-gateway:
+    image: api-gateway:0.0.1-SNAPSHOT
+    build:
+      context: ./microservices/api-gateway
+    ports:
+      - "8765:8765"
+    restart: always
+    depends_on:
+      - naming-server
+      - config-server
+    command: ["java", "-jar", "/app.jar", "--spring.config.import=configserver:http://config-server:8888"]
+    environment:
+      SPRING_CONFIG_IMPORT: optional:configserver:http://config-server:8888
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://naming-server:8761/eureka
+    networks:
+      - microservice-network
+
+  currency-exchange:
+    image: currency-exchange:0.0.1-SNAPSHOT
+    build:
+      context: ./microservices/currency-exchange-microservice
+    ports:
+      - "8000:8000"
+    restart: always
+    depends_on:
+      - naming-server
+      - config-server
+    command: ["java", "-jar", "/app.jar", "--spring.config.import=configserver:http://config-server:8888"]
+    environment:
+      SPRING_CONFIG_IMPORT: optional:configserver:http://config-server:8888
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://naming-server:8761/eureka
+    networks:
+      - microservice-network
+
+  currency-conversion:
+    image: currency-conversion:0.0.1-SNAPSHOT
+    build:
+      context: ./microservices/currency-conversion-microservice
+    ports:
+      - "8100:8100"
+    restart: always
+    depends_on:
+      - naming-server
+      - config-server
+    command: ["java", "-jar", "/app.jar", "--spring.config.import=configserver:http://config-server:8888"]
+    environment:
+      SPRING_CONFIG_IMPORT: optional:configserver:http://config-server:8888
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://naming-server:8761/eureka
+    networks:
+      - microservice-network
+
+  limits-service:
+    image: limits-service:0.0.1-SNAPSHOT
+    build:
+      context: ./microservices/limits-microservice
+    ports:
+      - "8080:8080"
+    restart: always
+    depends_on:
+      - naming-server
+      - config-server
+    command: ["java", "-jar", "/app.jar", "--spring.config.import=configserver:http://config-server:8888"]
+    environment:
+      SPRING_CONFIG_IMPORT: optional:configserver:http://config-server:8888
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://naming-server:8761/eureka
+    networks:
+      - microservice-network
+
+  zipkin:
+    image: openzipkin/zipkin:latest
+    ports:
+      - "9411:9411"
+    restart: always
+    networks:
+      - microservice-network
+
+networks:
+  microservice-network:
+    driver: bridge

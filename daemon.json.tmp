@@ -1,0 +1,4 @@
+{
+  "insecure-registries": ["docker.io", "registry-1.docker.io"],
+  "hosts": ["unix:///var/run/docker.sock", "tcp://0.0.0.0:2375"]
+}

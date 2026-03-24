@@ -6,6 +6,7 @@ import jakarta.persistence.Id;
 import java.math.BigDecimal;
 
 @Entity
+@jakarta.persistence.Table(name = "currency_exchange")
 public class CurrencyExchange {
 
     @Id

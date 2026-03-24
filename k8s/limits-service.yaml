@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: limits-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: limits-service
+  template:
+    metadata:
+      labels:
+        app: limits-service
+    spec:
+      containers:
+        - name: limits-service
+          image: iss211/limits-service:0.0.1-SNAPSHOT
+          ports:
+            - containerPort: 8080
+          env:
+            - name: SPRING_CONFIG_IMPORT
+              value: "optional:configserver:http://config-server:8888"
+            - name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
+              value: "http://naming-server:8761/eureka"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: limits-service
+spec:
+  selector:
+    app: limits-service
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
+  type: ClusterIP

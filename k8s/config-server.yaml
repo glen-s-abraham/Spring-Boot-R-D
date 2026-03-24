@@ -1,0 +1,86 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: config-repo
+data:
+  api-gateway.properties: |-
+    eureka.client.serviceUrl.defaultZone=http://naming-server:8761/eureka
+    management.tracing.sampling.probability=1.0
+    logging.pattern.level=%5p [${spring.application.name:},%X{traceId:-},%X{spanId:-}]
+    management.zipkin.tracing.endpoint=http://zipkin:9411/api/v2/spans
+    spring.cloud.gateway.discovery.locator.enabled=false
+    spring.cloud.gateway.routes[0].id=currency-exchange
+    spring.cloud.gateway.routes[0].uri=lb://currency-exchange
+    spring.cloud.gateway.routes[0].predicates[0]=Path=/currency-exchange/**
+    spring.cloud.gateway.routes[1].id=currency-conversion
+    spring.cloud.gateway.routes[1].uri=lb://currency-conversion
+    spring.cloud.gateway.routes[1].predicates[0]=Path=/currency-conversion/**
+  currency-conversion.properties: |-
+    eureka.client.serviceUrl.defaultZone=http://naming-server:8761/eureka
+    management.tracing.sampling.probability=1.0
+    logging.pattern.level=%5p [${spring.application.name:},%X{traceId:-},%X{spanId:-}]
+    management.zipkin.tracing.endpoint=http://zipkin:9411/api/v2/spans
+  currency-exchange.properties: |-
+    eureka.client.serviceUrl.defaultZone=http://naming-server:8761/eureka
+    management.tracing.sampling.probability=1.0
+    logging.pattern.level=%5p [${spring.application.name:},%X{traceId:-},%X{spanId:-}]
+    management.zipkin.tracing.endpoint=http://zipkin:9411/api/v2/spans
+    spring.jpa.show-sql=true
+    spring.h2.console.enabled=true
+    spring.h2.console.settings.web-allow-others=true
+    spring.datasource.url=jdbc:h2:mem:testdb
+    spring.jpa.hibernate.ddl-auto=create
+    spring.jpa.defer-datasource-initialization=true
+    spring.sql.init.mode=always
+  limits-microservice.properties: |-
+    spring.jpa.defer-datasource-initialization=true
+    eureka.client.serviceUrl.defaultZone=http://naming-server:8761/eureka
+    management.tracing.sampling.probability=1.0
+    logging.pattern.level=%5p [${spring.application.name:},%X{traceId:-},%X{spanId:-}]
+    management.zipkin.tracing.endpoint=http://zipkin:9411/api/v2/spans
+    limits-service.maximum=996
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: config-server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: config-server
+  template:
+    metadata:
+      labels:
+        app: config-server
+    spec:
+      containers:
+        - name: config-server
+          image: iss211/config-server:0.0.1-SNAPSHOT
+          ports:
+            - containerPort: 8888
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: native
+            - name: SPRING_CLOUD_CONFIG_SERVER_NATIVE_SEARCH_LOCATIONS
+              value: file:/config-repo
+          volumeMounts:
+            - name: config-repo-volume
+              mountPath: /config-repo
+      volumes:
+        - name: config-repo-volume
+          configMap:
+            name: config-repo
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: config-server
+spec:
+  selector:
+    app: config-server
+  ports:
+    - protocol: TCP
+      port: 8888
+      targetPort: 8888
+  type: ClusterIP
